@@ -1,0 +1,48 @@
+import java_cup.runtime.*;
+
+parser code {:
+    public void report_error(String message, Object info) {
+        StringBuilder m = new StringBuilder("Error");
+        if (info instanceof java_cup.runtime.Symbol) {
+            java_cup.runtime.Symbol s = ((java_cup.runtime.Symbol) info);
+            if (s.left >= 0) {
+                m.append(" en linea "+(s.left+1));
+                if (s.right >= 0) m.append(", columna "+(s.right+1));
+            }
+        }
+        m.append(" : "+message);
+        System.err.println(m);
+    }
+    public void report_fatal_error(String message, Object info) {
+        report_error(message, info);
+        throw new RuntimeException("Error sintáctico fatal");
+    }
+:};
+
+terminal           SEMI, PLUS, MINUS, TIMES, DIVIDE, LPAREN, RPAREN;
+terminal Integer   NUMBER;
+
+non terminal            expr_list;
+non terminal Integer    expr;
+
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE;
+
+expr_list ::= expr_list expr SEMI
+            | expr:e SEMI
+              {: System.out.println("= " + e); :}
+            ;
+
+expr      ::= expr:e1 PLUS expr:e2
+              {: RESULT = Integer.valueOf(e1.intValue() + e2.intValue()); :}
+            | expr:e1 MINUS expr:e2
+              {: RESULT = Integer.valueOf(e1.intValue() - e2.intValue()); :}
+            | expr:e1 TIMES expr:e2
+              {: RESULT = Integer.valueOf(e1.intValue() * e2.intValue()); :}
+            | expr:e1 DIVIDE expr:e2
+              {: RESULT = Integer.valueOf(e1.intValue() / e2.intValue()); :}
+            | LPAREN expr:e RPAREN
+              {: RESULT = e; :}
+            | NUMBER:n
+              {: RESULT = n; :}
+            ;
